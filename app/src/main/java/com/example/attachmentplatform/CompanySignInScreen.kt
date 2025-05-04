@@ -1,5 +1,6 @@
 package com.attachmentplatform.ui.screens
 
+import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -32,20 +33,41 @@ fun CompanySignInScreen(
     var isLoading by remember { mutableStateOf(false) }
 
     fun validateAndSignIn() {
-        if (email.isBlank() || password.isBlank()) {
-            Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
-            return
-        }
-        isLoading = true
-        auth.signInWithEmailAndPassword(email.trim(), password)
-            .addOnCompleteListener { task ->
-                isLoading = false
-                if (task.isSuccessful) {
-                    onSignInSuccess()
-                } else {
-                    Toast.makeText(context, task.exception?.message ?: "Sign in failed.", Toast.LENGTH_LONG).show()
-                }
+        when {
+            email.isBlank() || password.isBlank() -> {
+                Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
             }
+
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                Toast.makeText(context, "Enter a valid email address.", Toast.LENGTH_SHORT).show()
+            }
+
+            password.length < 6 -> {
+                Toast.makeText(context, "Password must be at least 6 characters.", Toast.LENGTH_SHORT).show()
+            }
+
+            else -> {
+                isLoading = true
+                auth.signInWithEmailAndPassword(email.trim(), password)
+                    .addOnCompleteListener { task ->
+                        isLoading = false
+                        if (task.isSuccessful) {
+                            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+                            onSignInSuccess()
+                            navController.navigate(NavRoutes.COMPANY_HOME) {
+                                popUpTo(NavRoutes.COMPANY_SIGN_IN_SCREEN) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                task.exception?.localizedMessage ?: "Sign-in failed.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+            }
+        }
     }
 
     Surface(
@@ -72,11 +94,12 @@ fun CompanySignInScreen(
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Company Email") },
+                        label = { Text("Email") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true
                     )
 
                     OutlinedTextField(
@@ -92,8 +115,11 @@ fun CompanySignInScreen(
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(icon, contentDescription = "Toggle Password Visibility")
                             }
-                        }
+                        },
+                        singleLine = true
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
                         onClick = { validateAndSignIn() },
@@ -102,12 +128,14 @@ fun CompanySignInScreen(
                         Text("Sign In")
                     }
 
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     TextButton(onClick = {
                         navController.navigate(NavRoutes.COMPANY_SIGN_UP_SCREEN) {
                             launchSingleTop = true
                         }
                     }) {
-                        Text("Create Company Account")
+                        Text("Don't have a company account? Sign up")
                     }
                 }
             }

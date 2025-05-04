@@ -1,7 +1,9 @@
 package com.attachmentplatform.ui.screens
 
+import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -10,16 +12,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.input.KeyboardType
 import com.attachmentplatform.NavRoutes
+import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,26 +33,41 @@ fun SignInScreen(
     var isLoading by remember { mutableStateOf(false) }
 
     fun validateAndSignIn() {
-        if (email.isBlank() || password.isBlank()) {
-            Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        isLoading = true
-        auth.signInWithEmailAndPassword(email.trim(), password)
-            .addOnCompleteListener { task ->
-                isLoading = false
-                if (task.isSuccessful) {
-                    // Navigate to the AuthScreen after successful login
-                    onSignInSuccess()
-                } else {
-                    Toast.makeText(
-                        context,
-                        task.exception?.message ?: "Sign in failed.",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+        when {
+            email.isBlank() || password.isBlank() -> {
+                Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
             }
+
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                Toast.makeText(context, "Please enter a valid email address.", Toast.LENGTH_SHORT).show()
+            }
+
+            password.length < 6 -> {
+                Toast.makeText(context, "Password must be at least 6 characters.", Toast.LENGTH_SHORT).show()
+            }
+
+            else -> {
+                isLoading = true
+                auth.signInWithEmailAndPassword(email.trim(), password)
+                    .addOnCompleteListener { task ->
+                        isLoading = false
+                        if (task.isSuccessful) {
+                            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+                            onSignInSuccess()
+                            navController.navigate(NavRoutes.STUDENT_HOME_SCREEN) {
+                                popUpTo(NavRoutes.STUDENT_SIGN_IN_SCREEN) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                task.exception?.localizedMessage ?: "Sign-in failed.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+            }
+        }
     }
 
     Surface(
@@ -74,7 +86,7 @@ fun SignInScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Sign In",
+                        text = "Student Sign In",
                         style = MaterialTheme.typography.headlineMedium,
                         modifier = Modifier.padding(bottom = 24.dp)
                     )
@@ -86,8 +98,8 @@ fun SignInScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                        singleLine = true
                     )
 
                     OutlinedTextField(
@@ -103,7 +115,8 @@ fun SignInScreen(
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
                                 Icon(icon, contentDescription = "Toggle Password Visibility")
                             }
-                        }
+                        },
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
@@ -114,6 +127,7 @@ fun SignInScreen(
                     ) {
                         Text("Sign In")
                     }
+
                     Spacer(modifier = Modifier.height(16.dp))
 
                     TextButton(onClick = {
@@ -121,14 +135,15 @@ fun SignInScreen(
                             launchSingleTop = true
                         }
                     }) {
-                        Text("Are you a student? Sign up here")
+                        Text("Don't have an account? Sign up")
                     }
+
                     TextButton(onClick = {
-                        navController.navigate(NavRoutes.COMPANY_SIGN_UP_SCREEN) {
+                        navController.navigate(NavRoutes.COMPANY_SIGN_IN_SCREEN) {
                             launchSingleTop = true
                         }
                     }) {
-                        Text("Are you a company? Sign up here")
+                        Text("Are you a company? Sign in")
                     }
                 }
             }

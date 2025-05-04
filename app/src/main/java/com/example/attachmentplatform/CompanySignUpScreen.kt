@@ -1,8 +1,9 @@
 package com.attachmentplatform.ui.screens
 
-
+import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -17,7 +18,6 @@ import androidx.navigation.NavHostController
 import com.attachmentplatform.NavRoutes
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
-import androidx.compose.foundation.text.KeyboardOptions
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,36 +33,47 @@ fun CompanySignUpScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
     fun validateAndSignUp() {
-        if (companyName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
-            Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (password != confirmPassword) {
-            Toast.makeText(context, "Passwords do not match.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        isLoading = true
-        auth.createUserWithEmailAndPassword(email.trim(), password)
-            .addOnCompleteListener { task ->
-                isLoading = false
-                if (task.isSuccessful) {
-                    val user = task.result?.user
-                    user?.let {
-                        onSignUpSuccess(it)
-                        navController.navigate(NavRoutes.COMPANY_HOME) {
-                            popUpTo(NavRoutes.STUDENT_SIGN_IN_SCREEN) { inclusive = true }
-                            launchSingleTop = true
+        when {
+            companyName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
+                Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
+            }
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                Toast.makeText(context, "Please enter a valid email address.", Toast.LENGTH_SHORT).show()
+            }
+            password.length < 6 -> {
+                Toast.makeText(context, "Password must be at least 6 characters.", Toast.LENGTH_SHORT).show()
+            }
+            password != confirmPassword -> {
+                Toast.makeText(context, "Passwords do not match.", Toast.LENGTH_SHORT).show()
+            }
+            else -> {
+                isLoading = true
+                auth.createUserWithEmailAndPassword(email.trim(), password)
+                    .addOnCompleteListener { task ->
+                        isLoading = false
+                        if (task.isSuccessful) {
+                            task.result?.user?.let {
+                                Toast.makeText(context, "Sign up successful!", Toast.LENGTH_SHORT).show()
+                                onSignUpSuccess(it)
+                                navController.navigate(NavRoutes.COMPANY_HOME) {
+                                    popUpTo(NavRoutes.COMPANY_SIGN_UP_SCREEN) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                task.exception?.message ?: "Sign up failed.",
+                                Toast.LENGTH_LONG
+                            ).show()
                         }
                     }
-                } else {
-                    Toast.makeText(context, task.exception?.message ?: "Sign up failed.", Toast.LENGTH_LONG).show()
-                }
             }
+        }
     }
 
     Surface(
@@ -114,11 +125,14 @@ fun CompanySignUpScreen(
                             .padding(vertical = 4.dp),
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
-                            val icon = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(icon, contentDescription = "Toggle Password Visibility")
+                                Icon(
+                                    if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = "Toggle Password Visibility"
+                                )
                             }
-                        }
+                        },
+                        singleLine = true
                     )
 
                     OutlinedTextField(
@@ -128,7 +142,16 @@ fun CompanySignUpScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()
+                        visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                Icon(
+                                    if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = "Toggle Confirm Password Visibility"
+                                )
+                            }
+                        },
+                        singleLine = true
                     )
 
                     Button(

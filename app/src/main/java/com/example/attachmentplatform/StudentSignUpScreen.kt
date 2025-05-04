@@ -1,5 +1,6 @@
 package com.attachmentplatform.ui.screens
 
+import android.util.Patterns
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
@@ -11,9 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.google.firebase.auth.FirebaseAuth
@@ -33,29 +32,45 @@ fun StudentSignUpScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
     fun validateAndSignUp() {
-        if (fullName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
-            Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (password != confirmPassword) {
-            Toast.makeText(context, "Passwords do not match.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        isLoading = true
-        auth.createUserWithEmailAndPassword(email.trim(), password)
-            .addOnCompleteListener { task ->
-                isLoading = false
-                if (task.isSuccessful) {
-                    onSignUpSuccess()
-                } else {
-                    Toast.makeText(context, task.exception?.message ?: "Sign up failed.", Toast.LENGTH_LONG).show()
-                }
+        when {
+            fullName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
+                Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
             }
+            !Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                Toast.makeText(context, "Invalid email format.", Toast.LENGTH_SHORT).show()
+            }
+            password.length < 6 -> {
+                Toast.makeText(context, "Password must be at least 6 characters.", Toast.LENGTH_SHORT).show()
+            }
+            password != confirmPassword -> {
+                Toast.makeText(context, "Passwords do not match.", Toast.LENGTH_SHORT).show()
+            }
+            else -> {
+                isLoading = true
+                auth.createUserWithEmailAndPassword(email.trim(), password)
+                    .addOnCompleteListener { task ->
+                        isLoading = false
+                        if (task.isSuccessful) {
+                            Toast.makeText(context, "Sign up successful!", Toast.LENGTH_SHORT).show()
+                            onSignUpSuccess()
+                            navController.navigate(NavRoutes.STUDENT_HOME_SCREEN) {
+                                popUpTo(NavRoutes.STUDENT_SIGN_UP_SCREEN) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } else {
+                            Toast.makeText(
+                                context,
+                                task.exception?.message ?: "Sign up failed.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+            }
+        }
     }
 
     Surface(
@@ -107,11 +122,14 @@ fun StudentSignUpScreen(
                             .padding(vertical = 4.dp),
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
-                            val icon = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                Icon(icon, contentDescription = "Toggle Password Visibility")
+                                Icon(
+                                    if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = "Toggle Password Visibility"
+                                )
                             }
-                        }
+                        },
+                        singleLine = true
                     )
 
                     OutlinedTextField(
@@ -121,7 +139,16 @@ fun StudentSignUpScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()
+                        visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                                Icon(
+                                    if (confirmPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = "Toggle Confirm Password Visibility"
+                                )
+                            }
+                        },
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))

@@ -2,6 +2,7 @@ package com.attachmentplatform.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -10,21 +11,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.*
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import com.attachmentplatform.NavRoutes
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentSignUpScreen(
     auth: FirebaseAuth,
     navController: NavHostController,
-    onSignUpSuccess: (FirebaseUser) -> Unit
+    onSignUpSuccess: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -51,14 +51,7 @@ fun StudentSignUpScreen(
             .addOnCompleteListener { task ->
                 isLoading = false
                 if (task.isSuccessful) {
-                    val user = task.result?.user
-                    user?.let {
-                        onSignUpSuccess(it)
-                        navController.navigate(NavRoutes.STUDENT_HOME) {
-                            popUpTo(NavRoutes.START_SCREEN) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
+                    onSignUpSuccess()
                 } else {
                     Toast.makeText(context, task.exception?.message ?: "Sign up failed.", Toast.LENGTH_LONG).show()
                 }
@@ -90,14 +83,18 @@ fun StudentSignUpScreen(
                         value = fullName,
                         onValueChange = { fullName = it },
                         label = { Text("Full Name") },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
                     )
 
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
                         label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
                     )
 
@@ -105,7 +102,9 @@ fun StudentSignUpScreen(
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             val icon = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
@@ -119,7 +118,9 @@ fun StudentSignUpScreen(
                         value = confirmPassword,
                         onValueChange = { confirmPassword = it },
                         label = { Text("Confirm Password") },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()
                     )
 
@@ -140,6 +141,14 @@ fun StudentSignUpScreen(
                         }
                     }) {
                         Text("Are you a company? Sign up here")
+                    }
+
+                    TextButton(onClick = {
+                        navController.navigate(NavRoutes.STUDENT_SIGN_IN_SCREEN) {
+                            launchSingleTop = true
+                        }
+                    }) {
+                        Text("Already a student? Sign in")
                     }
                 }
             }

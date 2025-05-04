@@ -68,7 +68,7 @@ fun CompanyHomeScreen(navController: NavHostController) {
 
                 OutlinedButton(
                     onClick = {
-                        navController.navigate(NavRoutes.SIGN_IN_SCREEN) {
+                        navController.navigate(NavRoutes.STUDENT_SIGN_IN_SCREEN) {
                             popUpTo(NavRoutes.COMPANY_HOME) { inclusive = true }
                         }
                     },

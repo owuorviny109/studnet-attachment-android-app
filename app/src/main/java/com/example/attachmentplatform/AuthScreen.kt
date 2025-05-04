@@ -1,14 +1,17 @@
 package com.attachmentplatform.ui.screens
-import androidx.compose.foundation.clickable
+
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.attachmentplatform.NavRoutes
 import com.google.firebase.auth.FirebaseAuth
-import com.attachmentplatform.NavRoutes // Ensure correct import
+
 
 enum class UserType { STUDENT, COMPANY }
 
@@ -29,8 +32,14 @@ fun AuthScreen(auth: FirebaseAuth, navController: NavHostController) {
         Spacer(modifier = Modifier.height(20.dp))
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = { isSigningIn = true }) { Text("Sign In") }
-            Button(onClick = { isSigningIn = false }) { Text("Sign Up") }
+            Button(onClick = {
+                isSigningIn = true
+                selectedUserType = UserType.STUDENT
+            }) { Text("Sign In") }
+            Button(onClick = {
+                isSigningIn = false
+                selectedUserType = UserType.STUDENT
+            }) { Text("Sign Up") }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -56,7 +65,11 @@ fun AuthScreen(auth: FirebaseAuth, navController: NavHostController) {
 
         Button(onClick = {
             if (isSigningIn) {
-                navController.navigate(NavRoutes.SIGN_IN_SCREEN)
+                if(selectedUserType == UserType.STUDENT){
+                    navController.navigate(NavRoutes.STUDENT_SIGN_IN_SCREEN)
+                }else{
+                    navController.navigate(NavRoutes.COMPANY_SIGN_IN_SCREEN)
+                }
             } else {
                 val route = when (selectedUserType) {
                     UserType.STUDENT -> NavRoutes.STUDENT_SIGN_UP_SCREEN

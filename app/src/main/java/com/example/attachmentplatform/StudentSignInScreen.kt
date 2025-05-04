@@ -1,6 +1,5 @@
 package com.attachmentplatform.ui.screens
 
-
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -11,56 +10,50 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.*
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import com.attachmentplatform.NavRoutes
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.KeyboardType
+import com.attachmentplatform.NavRoutes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CompanySignUpScreen(
+fun SignInScreen(
     auth: FirebaseAuth,
     navController: NavHostController,
-    onSignUpSuccess: (FirebaseUser) -> Unit
+    onSignInSuccess: () -> Unit
 ) {
     val context = LocalContext.current
 
-    var companyName by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
-    fun validateAndSignUp() {
-        if (companyName.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank()) {
+    fun validateAndSignIn() {
+        if (email.isBlank() || password.isBlank()) {
             Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
             return
         }
 
-        if (password != confirmPassword) {
-            Toast.makeText(context, "Passwords do not match.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
         isLoading = true
-        auth.createUserWithEmailAndPassword(email.trim(), password)
+        auth.signInWithEmailAndPassword(email.trim(), password)
             .addOnCompleteListener { task ->
                 isLoading = false
                 if (task.isSuccessful) {
-                    val user = task.result?.user
-                    user?.let {
-                        onSignUpSuccess(it)
-                        navController.navigate(NavRoutes.COMPANY_HOME) {
-                            popUpTo(NavRoutes.STUDENT_SIGN_IN_SCREEN) { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    }
+                    // Navigate to the AuthScreen after successful login
+                    onSignInSuccess()
                 } else {
-                    Toast.makeText(context, task.exception?.message ?: "Sign up failed.", Toast.LENGTH_LONG).show()
+                    Toast.makeText(
+                        context,
+                        task.exception?.message ?: "Sign in failed.",
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
             }
     }
@@ -81,28 +74,20 @@ fun CompanySignUpScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Company Sign Up",
+                        text = "Sign In",
                         style = MaterialTheme.typography.headlineMedium,
                         modifier = Modifier.padding(bottom = 24.dp)
                     )
 
                     OutlinedTextField(
-                        value = companyName,
-                        onValueChange = { companyName = it },
-                        label = { Text("Company Name") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp)
-                    )
-
-                    OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Company Email") },
+                        label = { Text("Email") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+
                     )
 
                     OutlinedTextField(
@@ -121,25 +106,14 @@ fun CompanySignUpScreen(
                         }
                     )
 
-                    OutlinedTextField(
-                        value = confirmPassword,
-                        onValueChange = { confirmPassword = it },
-                        label = { Text("Confirm Password") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation()
-                    )
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Button(
-                        onClick = { validateAndSignUp() },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp)
+                        onClick = { validateAndSignIn() },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Create Company Account")
+                        Text("Sign In")
                     }
-
                     Spacer(modifier = Modifier.height(16.dp))
 
                     TextButton(onClick = {
@@ -149,11 +123,12 @@ fun CompanySignUpScreen(
                     }) {
                         Text("Are you a student? Sign up here")
                     }
-
                     TextButton(onClick = {
-                        navController.navigate(NavRoutes.COMPANY_SIGN_IN_SCREEN)
+                        navController.navigate(NavRoutes.COMPANY_SIGN_UP_SCREEN) {
+                            launchSingleTop = true
+                        }
                     }) {
-                        Text("Already a company? Sign in")
+                        Text("Are you a company? Sign up here")
                     }
                 }
             }

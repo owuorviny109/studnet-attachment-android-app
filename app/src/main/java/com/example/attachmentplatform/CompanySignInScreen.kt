@@ -1,7 +1,8 @@
-package com.attachmentplatform
+package com.attachmentplatform.ui.screens
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -10,21 +11,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.attachmentplatform.NavRoutes
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.KeyboardType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SignInScreen(
-    auth: FirebaseAuth,
+fun CompanySignInScreen(
     navController: NavHostController,
-    onSignInSuccess: (FirebaseUser) -> Unit
+    auth: FirebaseAuth,
+    onSignInSuccess: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -38,17 +36,12 @@ fun SignInScreen(
             Toast.makeText(context, "Please fill in all fields.", Toast.LENGTH_SHORT).show()
             return
         }
-
         isLoading = true
         auth.signInWithEmailAndPassword(email.trim(), password)
             .addOnCompleteListener { task ->
                 isLoading = false
                 if (task.isSuccessful) {
-                    val user = task.result?.user
-                    user?.let {
-                        onSignInSuccess(it)
-                        // Navigate to appropriate home screen
-                    }
+                    onSignInSuccess()
                 } else {
                     Toast.makeText(context, task.exception?.message ?: "Sign in failed.", Toast.LENGTH_LONG).show()
                 }
@@ -71,7 +64,7 @@ fun SignInScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Sign In",
+                        text = "Company Sign In",
                         style = MaterialTheme.typography.headlineMedium,
                         modifier = Modifier.padding(bottom = 24.dp)
                     )
@@ -79,19 +72,20 @@ fun SignInScreen(
                     OutlinedTextField(
                         value = email,
                         onValueChange = { email = it },
-                        label = { Text("Email") },
+                        label = { Text("Company Email") },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 4.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
-
                     )
 
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
                         visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                         trailingIcon = {
                             val icon = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
@@ -106,6 +100,14 @@ fun SignInScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Sign In")
+                    }
+
+                    TextButton(onClick = {
+                        navController.navigate(NavRoutes.COMPANY_SIGN_UP_SCREEN) {
+                            launchSingleTop = true
+                        }
+                    }) {
+                        Text("Create Company Account")
                     }
                 }
             }

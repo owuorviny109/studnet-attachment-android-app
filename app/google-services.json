@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "598896237496",
+    "project_id": "attachmentplatform",
+    "storage_bucket": "attachmentplatform.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:598896237496:android:192851134237111c070d4d",
+        "android_client_info": {
+          "package_name": "com.attachmentplatform"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD_Wuqkl-CfjvCq72qG2trikC4zHkSCtHI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

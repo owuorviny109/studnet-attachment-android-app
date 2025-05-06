@@ -1,19 +1,24 @@
 package com.attachmentplatform
 
+import com.attachmentplatform.ui.screens.MainScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import com.google.firebase.auth.FirebaseAuth
-import com.attachmentplatform.MainScreen
+import com.attachmentplatform.ui.theme.AttachmentPlatformTheme // Assuming you have a theme defined
 
 class MainActivity : ComponentActivity() {
-    private lateinit var auth: FirebaseAuth
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        auth = FirebaseAuth.getInstance()
+
+        // Get an instance of FirebaseAuth here
+        val auth = FirebaseAuth.getInstance()
+
         setContent {
-            MainScreen(auth)
+            AttachmentPlatformTheme { // Apply your app's theme if you have one
+                // Call your MainScreen composable here
+                MainScreen(auth = auth)
+            }
         }
     }
 }

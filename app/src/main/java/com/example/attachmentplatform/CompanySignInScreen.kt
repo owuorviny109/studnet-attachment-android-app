@@ -54,7 +54,9 @@ fun CompanySignInScreen(
                         if (task.isSuccessful) {
                             Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
                             onSignInSuccess()
-                            navController.navigate(NavRoutes.COMPANY_HOME) {
+
+
+                            navController.navigate(NavRoutes.COMPANY_HOME_SCREEN) {
                                 popUpTo(NavRoutes.COMPANY_SIGN_IN_SCREEN) { inclusive = true }
                                 launchSingleTop = true
                             }

@@ -2,81 +2,55 @@ package com.attachmentplatform.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.attachmentplatform.NavRoutes
+import com.attachmentplatform.ui.components.CompanyNavigationItem
+import com.attachmentplatform.ui.components.CustomNavigationRail
+import com.attachmentplatform.ui.components.DashboardTopBar
+import com.attachmentplatform.ui.screens.opportunities.OpportunitiesContent
+import com.attachmentplatform.ui.screens.applications.ApplicationsContent
+import com.attachmentplatform.ui.screens.OverviewContent
+import com.attachmentplatform.ui.screens.MessagesContent
+import com.attachmentplatform.ui.screens.ProfileContent
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompanyHomeScreen(navController: NavHostController) {
+    var selectedItem by remember { mutableStateOf(CompanyNavigationItem.OVERVIEW) }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "AttachME",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            )
-        }
+        topBar = { DashboardTopBar() }
     ) { paddingValues ->
-        Box(
+        Row(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp),
-            contentAlignment = Alignment.Center
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            CustomNavigationRail(
+                selectedItem = selectedItem,
+                onItemSelected = { selectedItem = it }
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
             ) {
-                Text(
-                    text = "Welcome, Company!",
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 24.sp
-                    ),
-                    textAlign = TextAlign.Center
-                )
-
-                Text(
-                    text = "You're signed in to AttachME.\nStart posting internship opportunities and view student applications.",
-                    style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray),
-                    textAlign = TextAlign.Center
-                )
-
-                Button(
-                    onClick = { /* TODO: Navigate to post internship */ },
-                    modifier = Modifier.fillMaxWidth(0.8f)
-                ) {
-                    Text("Post Internship")
-                }
-
-                OutlinedButton(
-                    onClick = {
-                        navController.navigate(NavRoutes.STUDENT_SIGN_IN_SCREEN) {
-                            popUpTo(NavRoutes.COMPANY_HOME) { inclusive = true }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(0.8f)
-                ) {
-                    Text("Sign Out")
+                when (selectedItem) {
+                    CompanyNavigationItem.OVERVIEW -> OverviewContent()
+                    CompanyNavigationItem.OPPORTUNITIES -> OpportunitiesContent()
+                    CompanyNavigationItem.APPLICATIONS -> ApplicationsContent()
+                    CompanyNavigationItem.MESSAGES -> MessagesContent()
+                    CompanyNavigationItem.PROFILE -> ProfileContent(navController)
                 }
             }
         }
     }
 }
+

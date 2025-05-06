@@ -23,7 +23,12 @@ import com.attachmentplatform.NavRoutes
 fun StudentSignUpScreen(
     auth: FirebaseAuth,
     navController: NavHostController,
-    onSignUpSuccess: () -> Unit
+    onSignUpSuccess: () -> Unit = {
+        navController.navigate(NavRoutes.STUDENT_HOME_SCREEN) {
+            popUpTo(NavRoutes.STUDENT_SIGN_UP_SCREEN) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
 ) {
     val context = LocalContext.current
 
@@ -56,11 +61,7 @@ fun StudentSignUpScreen(
                         isLoading = false
                         if (task.isSuccessful) {
                             Toast.makeText(context, "Sign up successful!", Toast.LENGTH_SHORT).show()
-                            onSignUpSuccess()
-                            navController.navigate(NavRoutes.STUDENT_HOME_SCREEN) {
-                                popUpTo(NavRoutes.STUDENT_SIGN_UP_SCREEN) { inclusive = true }
-                                launchSingleTop = true
-                            }
+                            onSignUpSuccess() // Call the lambda to trigger navigation from MainScreen.kt
                         } else {
                             Toast.makeText(
                                 context,

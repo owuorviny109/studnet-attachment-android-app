@@ -1,6 +1,6 @@
 package com.attachmentplatform
 
-enum class UserType{
+enum class UserType {
     STUDENT,
     COMPANY
 }

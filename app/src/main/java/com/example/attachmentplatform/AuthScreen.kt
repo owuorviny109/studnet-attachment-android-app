@@ -65,10 +65,10 @@ fun AuthScreen(auth: FirebaseAuth, navController: NavHostController) {
 
         Button(onClick = {
             if (isSigningIn) {
-                if(selectedUserType == UserType.STUDENT){
-                    navController.navigate(NavRoutes.STUDENT_SIGN_IN_SCREEN)
-                }else{
-                    navController.navigate(NavRoutes.COMPANY_SIGN_IN_SCREEN)
+                if (selectedUserType == UserType.STUDENT) {
+                    navController.navigate(NavRoutes.STUDENT_HOME_SCREEN) // Navigate to StudentDashboardScreen
+                } else {
+                    navController.navigate(NavRoutes.COMPANY_HOME_SCREEN)
                 }
             } else {
                 val route = when (selectedUserType) {

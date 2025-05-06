@@ -23,7 +23,7 @@ import com.google.firebase.auth.FirebaseAuth
 fun SignInScreen(
     auth: FirebaseAuth,
     navController: NavHostController,
-    onSignInSuccess: () -> Unit
+    onSignInSuccess: () -> Unit // This lambda handles the navigation
 ) {
     val context = LocalContext.current
 
@@ -53,11 +53,14 @@ fun SignInScreen(
                         isLoading = false
                         if (task.isSuccessful) {
                             Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
-                            onSignInSuccess()
+                            onSignInSuccess() // Call the lambda to trigger navigation from MainScreen.kt
+                            // REMOVE the direct navigation call here:
+                            /*
                             navController.navigate(NavRoutes.STUDENT_HOME_SCREEN) {
                                 popUpTo(NavRoutes.STUDENT_SIGN_IN_SCREEN) { inclusive = true }
                                 launchSingleTop = true
                             }
+                            */
                         } else {
                             Toast.makeText(
                                 context,
@@ -69,6 +72,8 @@ fun SignInScreen(
             }
         }
     }
+
+    // ... (rest of your composable remains the same)
 
     Surface(
         modifier = Modifier.fillMaxSize(),

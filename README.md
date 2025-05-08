@@ -109,7 +109,5 @@ If you would like to contribute to AttachME, please fork the repository, create 
 
 Please ensure that you follow the existing coding conventions and that your code is well-tested. Any contributions, big or small, are welcome!
 
-**License**
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 

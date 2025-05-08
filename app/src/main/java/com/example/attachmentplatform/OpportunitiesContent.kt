@@ -1,21 +1,32 @@
 package com.attachmentplatform.ui.screens.opportunities
 
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.lazy.LazyColumn
-import com.attachmentplatform.ui.screens.opportunities.CreateOpportunityForm
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.attachmentplatform.viewmodel.OpportunityViewModel
+import com.attachmentplatform.viewmodel.UiState
 
 @Composable
-fun OpportunitiesContent() {
+fun OpportunitiesContent(
+    viewModel: OpportunityViewModel = hiltViewModel()
+) {
     var showForm by remember { mutableStateOf(false) }
+
+    // 🔁 Load opportunities when this Composable is first shown
+    LaunchedEffect(Unit) {
+        viewModel.loadOpportunities()
+    }
+
+    val state by viewModel.creationState.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -29,7 +40,18 @@ fun OpportunitiesContent() {
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.SemiBold),
                 modifier = Modifier.padding(vertical = 24.dp)
             )
+        }
 
+        // 🔴 Optional: Display Firestore errors if they happen
+        item {
+            if (state is UiState.Error) {
+                Text(
+                    text = "Error: ${(state as UiState.Error).message}",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+            }
         }
 
         item {
@@ -57,7 +79,7 @@ fun OpportunitiesContent() {
                     elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        CreateOpportunityForm()
+                        CreateOpportunityForm(viewModel = viewModel)
                     }
                 }
             }

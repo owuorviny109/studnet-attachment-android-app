@@ -1,3 +1,4 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
 package com.attachmentplatform.ui.screens.opportunities
 
 import android.app.DatePickerDialog
@@ -5,7 +6,6 @@ import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -14,12 +14,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.attachmentplatform.viewmodel.OpportunityViewModel
+import com.attachmentplatform.viewmodel.UiState
 import java.text.SimpleDateFormat
 import java.util.*
 
 fun openDatePickerDialog(context: Context, onDateSelected: (String) -> Unit) {
     val calendar = Calendar.getInstance()
-    val datePickerDialog = DatePickerDialog(
+    DatePickerDialog(
         context, { _, year, month, dayOfMonth ->
             val date = String.format("%04d-%02d-%02d", year, month + 1, dayOfMonth)
             onDateSelected(date)
@@ -27,81 +29,99 @@ fun openDatePickerDialog(context: Context, onDateSelected: (String) -> Unit) {
         calendar.get(Calendar.YEAR),
         calendar.get(Calendar.MONTH),
         calendar.get(Calendar.DAY_OF_MONTH)
-    )
-    datePickerDialog.datePicker.minDate = System.currentTimeMillis()
-    datePickerDialog.show()
+    ).apply {
+        datePicker.minDate = System.currentTimeMillis()
+    }.show()
 }
 
 @Composable
-fun CreateOpportunityForm() {
+fun CreateOpportunityForm(viewModel: OpportunityViewModel) {
     var companyName by remember { mutableStateOf("") }
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var requirements by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf("Select Duration") }
+    var slotsText by remember { mutableStateOf("1") }
     var availableSlots by remember { mutableStateOf(1) }
     var applicationDeadline by remember { mutableStateOf("") }
+
     var errorMessage by remember { mutableStateOf("") }
-    var isFormValid by remember { mutableStateOf(true) }
     var isDropdownExpanded by remember { mutableStateOf(false) }
 
     val context = LocalContext.current
     val durationOptions = listOf("Jan-Mar", "May-Jul", "Aug-Oct")
     val currentDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
-    // Validation functions
-    fun isValidCompanyName(name: String) = name.matches("^[a-zA-Z ]+$".toRegex())
-    fun isValidTitle(title: String) = title.contains("IT", ignoreCase = true)
-    fun isValidDescription(description: String) = description.matches("^[a-zA-Z ]+$".toRegex())
-    fun isValidLocation(location: String) = location.matches("^[a-zA-Z ]+$".toRegex())
-    fun isValidAvailableSlots(slots: Int) = slots > 0
-    fun isValidApplicationDeadline(deadline: String) = deadline > currentDate
+    val creationState by viewModel.creationState.collectAsState()
+    LaunchedEffect(creationState) {
+        when (creationState) {
+            is UiState.Success -> {
+                errorMessage = "Opportunity posted successfully!"
+                companyName = ""
+                title = ""
+                description = ""
+                requirements = ""
+                location = ""
+                duration = "Select Duration"
+                slotsText = "1"
+                availableSlots = 1
+                applicationDeadline = ""
+            }
+            is UiState.Error -> errorMessage = (creationState as UiState.Error).message
+            else -> {}
+        }
+    }
+
+    fun isValidForm(): Boolean {
+        return when {
+            companyName.isBlank() || title.isBlank() || description.isBlank() ||
+                    location.isBlank() || duration == "Select Duration" ||
+                    slotsText.isBlank() || applicationDeadline.isBlank() -> {
+                errorMessage = "All fields are required."
+                false
+            }
+            availableSlots < 1 -> {
+                errorMessage = "Slots must be at least 1."
+                false
+            }
+            !companyName.matches("^[a-zA-Z ]+$".toRegex()) -> {
+                errorMessage = "Company name should only contain letters."
+                false
+            }
+            !title.matches("^[\\w\\s.,'\"!?()-]+$".toRegex()) -> {
+                errorMessage = "Title contains invalid characters."
+                false
+            }
+            !description.matches("^[\\w\\s.,'\"!?()-]+$".toRegex()) -> {
+                errorMessage = "Description contains invalid characters."
+                false
+            }
+
+                !location.matches("^[a-zA-Z ]+$".toRegex()) -> {
+                errorMessage = "Location should only contain letters."
+                false
+            }
+            applicationDeadline <= currentDate -> {
+                errorMessage = "Application deadline must be in the future."
+                false
+            }
+            else -> true
+        }
+    }
 
     fun handleFormSubmit() {
-        when {
-            companyName.isBlank() || title.isBlank() || description.isBlank() ||
-                    location.isBlank() || duration.isBlank() || availableSlots == 0 ||
-                    applicationDeadline.isBlank() -> {
-                errorMessage = "All fields are required."
-                isFormValid = false
-            }
-
-            !isValidCompanyName(companyName) -> {
-                errorMessage = "Company name should only contain letters."
-                isFormValid = false
-            }
-
-            !isValidTitle(title) -> {
-                fun isValidTitle(title: String) = title.length >= 3
-
-                isFormValid = false
-            }
-
-            !isValidDescription(description) -> {
-                errorMessage = "Description should only contain letters."
-                isFormValid = false
-            }
-
-            !isValidLocation(location) -> {
-                errorMessage = "Location should only contain letters."
-                isFormValid = false
-            }
-
-            !isValidAvailableSlots(availableSlots) -> {
-                errorMessage = "Available slots should be a positive number."
-                isFormValid = false
-            }
-
-            !isValidApplicationDeadline(applicationDeadline) -> {
-                errorMessage = "Application deadline must be a future date."
-                isFormValid = false
-            }
-
-            else -> {
-                errorMessage = "Form submitted successfully!"
-                isFormValid = true
-            }
+        if (isValidForm()) {
+            viewModel.createOpportunity(
+                companyName = companyName,
+                title = title,
+                description = description,
+                requirements = requirements,
+                location = location,
+                duration = duration,
+                slots = availableSlots,
+                deadline = applicationDeadline
+            )
         }
     }
 
@@ -113,24 +133,21 @@ fun CreateOpportunityForm() {
     ) {
         Text(
             text = "Post a New Opportunity for a Student",
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-            modifier = Modifier.padding(bottom = 24.dp)
+            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold)
         )
 
         OutlinedTextField(
             value = companyName,
             onValueChange = { companyName = it },
             label = { Text("Company Name") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = title,
             onValueChange = { title = it },
             label = { Text("Title") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
@@ -153,82 +170,78 @@ fun CreateOpportunityForm() {
             value = location,
             onValueChange = { location = it },
             label = { Text("Location") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true
-        )
-
-        OutlinedTextField(
-            value = duration,
-            onValueChange = { duration = it },
-            label = { Text("Duration") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            trailingIcon = {
-                IconButton(onClick = { isDropdownExpanded = !isDropdownExpanded }) {
-                    Icon(Icons.Filled.ArrowDropDown, contentDescription = "Dropdown Icon")
-                }
-            }
-        )
-
-        DropdownMenu(
-            expanded = isDropdownExpanded,
-            onDismissRequest = { isDropdownExpanded = false },
             modifier = Modifier.fillMaxWidth()
+        )
+
+        ExposedDropdownMenuBox(
+            expanded = isDropdownExpanded,
+            onExpandedChange = { isDropdownExpanded = !isDropdownExpanded }
         ) {
-            durationOptions.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(option) },
-                    onClick = {
-                        duration = option
-                        isDropdownExpanded = false
-                    }
-                )
+            OutlinedTextField(
+                value = duration,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Duration") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isDropdownExpanded) },
+                modifier = Modifier.menuAnchor().fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = isDropdownExpanded,
+                onDismissRequest = { isDropdownExpanded = false }
+            ) {
+                durationOptions.forEach { option ->
+                    DropdownMenuItem(
+                        text = { Text(option) },
+                        onClick = {
+                            duration = option
+                            isDropdownExpanded = false
+                        }
+                    )
+                }
             }
         }
 
         OutlinedTextField(
-            value = availableSlots.toString(),
+            value = slotsText,
             onValueChange = {
-                availableSlots = it.toIntOrNull() ?: 1
+                slotsText = it
+                availableSlots = it.toIntOrNull() ?: 0
             },
             label = { Text("Available Slots") },
-            modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-            singleLine = true
+            modifier = Modifier.fillMaxWidth()
         )
 
         OutlinedTextField(
             value = applicationDeadline,
-            onValueChange = { applicationDeadline = it },
+            onValueChange = {},
             label = { Text("Application Deadline") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
             readOnly = true,
+            modifier = Modifier.fillMaxWidth(),
             trailingIcon = {
                 IconButton(onClick = {
-                    openDatePickerDialog(context) { selectedDate ->
-                        applicationDeadline = selectedDate
+                    openDatePickerDialog(context) {
+                        applicationDeadline = it
                     }
                 }) {
-                    Icon(Icons.Filled.CalendarToday, contentDescription = "Date Picker")
+                    Icon(Icons.Filled.CalendarToday, contentDescription = null)
                 }
             }
         )
 
-        Text(
-            text = errorMessage,
-            color = if (isFormValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(vertical = 8.dp)
-        )
+        if (errorMessage.isNotEmpty()) {
+            Text(
+                text = errorMessage,
+                color = if (creationState is UiState.Success) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.error
+            )
+        }
 
         Button(
             onClick = { handleFormSubmit() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Post Opportunity", color = MaterialTheme.colorScheme.onPrimary)
+            Text("Post Opportunity")
         }
     }
 }
